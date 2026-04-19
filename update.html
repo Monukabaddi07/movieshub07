@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Manager</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 100%);
+            color: #fff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #ff0000, #ff6b6b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            color: #999;
+            font-size: 14px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #2a3050;
+            overflow-x: auto;
+            padding-bottom: 0;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            color: #999;
+            padding: 15px 20px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .tab-btn:hover {
+            color: #fff;
+        }
+
+        .tab-btn.active {
+            color: #ff0000;
+            border-bottom-color: #ff0000;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Add Video Form */
+        .form-section {
+            background: #1a1f3a;
+            border: 1px solid #2a3050;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #e0e0e0;
+        }
+
+        input[type="text"],
+        input[type="url"],
+        textarea {
+            width: 100%;
+            padding: 12px 15px;
+            background: #0f1428;
+            border: 1px solid #2a3050;
+            border-radius: 8px;
+            color: #fff;
+            font-family: inherit;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        input[type="text"]:focus,
+        input[type="url"]:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #ff0000;
+            box-shadow: 0 0 0 3px rgba(255, 0, 0, 0.1);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .input-hint {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .form-group-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #ff0000, #ff6b6b);
+            color: #fff;
+            flex: 1;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(255, 0, 0, 0.3);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: #2a3050;
+            color: #e0e0e0;
+        }
+
+        .btn-secondary:hover {
+            background: #3a4060;
+        }
+
+        .btn-copy {
+            background: #2a5f3f;
+            color: #fff;
+            padding: 8px 16px;
+            font-size: 12px;
+        }
+
+        .btn-copy:hover {
+            background: #3a7f5f;
+        }
+
+        .btn-delete {
+            background: #5f2a2a;
+            color: #fff;
+            padding: 8px 12px;
+            font-size: 12px;
+        }
+
+        .btn-delete:hover {
+            background: #7f3a3a;
+        }
+
+        /* Messages */
+        .message {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .message.show {
+            display: block;
+        }
+
+        .message.success {
+            background: #1a5f3f;
+            color: #4ade80;
+            border: 1px solid #2a7f5f;
+        }
+
+        .message.error {
+            background: #5f2a2a;
+            color: #ff6b6b;
+            border: 1px solid #7f3a3a;
+        }
+
+        .message.info {
+            background: #2a3a5f;
+            color: #60a5fa;
+            border: 1px solid #3a5a7f;
+        }
+
+        /* Videos Grid */
+        .videos-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .video-card {
+            background: #1a1f3a;
+            border: 1px solid #2a3050;
+            border-radius: 12px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .video-card:hover {
+            border-color: #ff0000;
+            box-shadow: 0 8px 20px rgba(255, 0, 0, 0.15);
+        }
+
+        .video-card-thumbnail {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            background: #0f1428;
+        }
+
+        .video-card-content {
+            padding: 15px;
+        }
+
+        .video-card-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #fff;
+            word-break: break-word;
+        }
+
+        .video-card-id {
+            font-size: 12px;
+            color: #ff0000;
+            margin-bottom: 8px;
+            font-family: 'Courier New', monospace;
+            word-break: break-all;
+        }
+
+        .video-card-date {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 12px;
+        }
+
+        .video-card-url {
+            font-size: 11px;
+            color: #666;
+            word-break: break-all;
+            margin-bottom: 12px;
+            max-height: 40px;
+            overflow: hidden;
+            background: #0f1428;
+            padding: 8px;
+            border-radius: 4px;
+        }
+
+        .video-card-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .video-card-actions button {
+            flex: 1;
+            padding: 8px;
+            font-size: 12px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        .empty-state h3 {
+            font-size: 18px;
+            margin-bottom: 8px;
+            color: #999;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .form-group-row {
+                grid-template-columns: 1fr;
+            }
+
+            .form-section {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
+            .tabs {
+                gap: 5px;
+            }
+
+            .tab-btn {
+                padding: 12px 15px;
+                font-size: 12px;
+            }
+
+            .videos-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            .btn-copy,
+            .btn-delete {
+                padding: 10px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+
+            header {
+                margin-bottom: 20px;
+            }
+
+            h1 {
+                font-size: 20px;
+            }
+
+            .form-section {
+                padding: 15px;
+                margin-bottom: 15px;
+            }
+
+            .form-group {
+                margin-bottom: 15px;
+            }
+
+            .video-card-thumbnail {
+                height: 150px;
+            }
+
+            .video-card-content {
+                padding: 12px;
+            }
+
+            .video-card-title {
+                font-size: 14px;
+            }
+
+            label {
+                font-size: 12px;
+            }
+
+            input,
+            textarea {
+                font-size: 16px; /* Prevent zoom on iOS */
+            }
+
+            .tab-btn {
+                padding: 10px 12px;
+                font-size: 11px;
+            }
+        }
+
+        /* Loading state */
+        .loading-spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-top-color: #ff0000;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        /* ID generation info */
+        .id-info {
+            background: #0f1428;
+            padding: 12px 15px;
+            border-radius: 6px;
+            margin-top: 8px;
+            font-size: 12px;
+            color: #999;
+            border-left: 3px solid #ff0000;
+        }
+
+        .video-link {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 8px;
+            padding: 12px;
+            background: #0f1428;
+            border-radius: 6px;
+            font-size: 12px;
+            color: #60a5fa;
+            word-break: break-all;
+        }
+
+        .video-link code {
+            flex: 1;
+            font-family: 'Courier New', monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Video Manager</h1>
+            <p class="subtitle">Add, manage, and share your videos</p>
+        </header>
+
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('add')">Add Video</button>
+            <button class="tab-btn" onclick="switchTab('history')">Video History</button>
+        </div>
+
+        <!-- Add Video Tab -->
+        <div id="add" class="tab-content active">
+            <div class="form-section">
+                <h2 style="margin-bottom: 20px; font-size: 20px;">Upload New Video</h2>
+                
+                <div id="messageContainer"></div>
+
+                <form id="videoForm">
+                    <div class="form-group">
+                        <label for="videoName">Video Name *</label>
+                        <input type="text" id="videoName" placeholder="e.g., The Matrix, Spider-Man, etc." required>
+                        <div class="input-hint">This will be used to generate your video ID</div>
+                    </div>
+
+                    <div class="form-group-row">
+                        <div class="form-group">
+                            <label for="videoUrl">Video URL (MP4 or M3U8) *</label>
+                            <input type="url" id="videoUrl" placeholder="https://example.com/video.mp4 or https://example.com/stream.m3u8" required>
+                            <div class="input-hint">Supports both MP4 files and HLS (M3U8) streams</div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="thumbnailUrl">Thumbnail URL *</label>
+                            <input type="url" id="thumbnailUrl" placeholder="https://example.com/thumbnail.jpg" required>
+                            <div class="input-hint">Cover image for your video</div>
+                        </div>
+                    </div>
+
+                    <div class="button-group">
+                        <button type="submit" class="btn-primary">
+                            <span id="submitBtnText">Upload Video</span>
+                        </button>
+                        <button type="reset" class="btn-secondary">Clear</button>
+                    </div>
+
+                    <div class="id-info">
+                        💡 <strong>Generated ID:</strong> Your video name will be converted to consonants only. 
+                        Example: "The Matrix" → "thmtrx01", "Spider-Man" → "spdrmn01"
+                    </div>
+                </form>
+
+                <div id="generatedLink" style="display: none; margin-top: 20px;">
+                    <div class="message success show">Video uploaded successfully! 🎉</div>
+                    <div class="video-link">
+                        <strong>Player Link:</strong>
+                        <code id="playerLink"></code>
+                        <button type="button" class="btn-copy" onclick="copyToClipboard()">Copy</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- History Tab -->
+        <div id="history" class="tab-content">
+            <div style="margin-bottom: 20px;">
+                <h2 style="font-size: 20px; margin-bottom: 15px;">All Videos</h2>
+                <p class="subtitle" style="margin-bottom: 15px;">Click on any video to view details and copy the player link</p>
+                <button class="btn-secondary" onclick="refreshHistory()" style="width: auto;">Refresh List</button>
+            </div>
+
+            <div id="videosContainer" class="videos-grid">
+                <div class="empty-state">
+                    <div class="empty-state-icon">🎬</div>
+                    <h3>No videos yet</h3>
+                    <p>Add your first video to get started</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    
+    <script>
+        // Wait for Firebase to be available
+        function waitForFirebase(callback, maxAttempts = 50) {
+            let attempts = 0;
+            const checkInterval = setInterval(() => {
+                if (typeof firebase !== 'undefined') {
+                    clearInterval(checkInterval);
+                    callback();
+                } else if (attempts++ > maxAttempts) {
+                    clearInterval(checkInterval);
+                    console.error('Firebase failed to load');
+                }
+            }, 100);
+        }
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyA8JHU7qGrKlLwJZKzK3Rj9zLMoTqsHN44",
+            authDomain: "admin-488f7.firebaseapp.com",
+            databaseURL: "https://admin-488f7-default-rtdb.firebaseio.com",
+            projectId: "admin-488f7",
+            storageBucket: "admin-488f7.appspot.com",
+            messagingSenderId: "640638260644",
+            appId: "1:640638260644:web:0e63d47918ff41b71f9d31"
+        };
+
+        let database;
+
+        // Initialize Firebase
+        function initializeApp() {
+            if (!firebase.apps.length) {
+                firebase.initializeApp(firebaseConfig);
+            }
+            database = firebase.database();
+            loadVideos();
+        }
+
+        // Tab switching
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+
+            if (tabName === 'history' && database) {
+                loadVideos();
+            }
+        }
+
+        // Generate ID from video name (consonants only)
+        function generateId(videoName) {
+            const consonants = videoName
+                .toLowerCase()
+                .replace(/[aeiou\s\-_.,!?@#$%^&*()]/g, '')
+                .substring(0, 10);
+            
+            const timestamp = Math.floor(Date.now() / 1000) % 100;
+            const id = consonants + ('0' + timestamp).slice(-2);
+            return id || 'video' + Date.now();
+        }
+
+        // Show message
+        function showMessage(message, type = 'info') {
+            const container = document.getElementById('messageContainer');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type} show`;
+            messageDiv.textContent = message;
+            
+            container.innerHTML = '';
+            container.appendChild(messageDiv);
+
+            if (type !== 'error') {
+                setTimeout(() => {
+                    messageDiv.classList.remove('show');
+                }, 5000);
+            }
+        }
+
+        // Handle form submission
+        document.getElementById('videoForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const videoName = document.getElementById('videoName').value.trim();
+            const videoUrl = document.getElementById('videoUrl').value.trim();
+            const thumbnailUrl = document.getElementById('thumbnailUrl').value.trim();
+
+            if (!videoName || !videoUrl || !thumbnailUrl) {
+                showMessage('Please fill in all required fields', 'error');
+                return;
+            }
+
+            const submitBtn = document.querySelector('.btn-primary');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="loading-spinner"></span>Uploading...';
+
+            try {
+                const videoId = generateId(videoName);
+
+                const videoData = {
+                    id: videoId,
+                    name: videoName,
+                    videoUrl: videoUrl,
+                    thumbnailUrl: thumbnailUrl,
+                    uploadedAt: new Date().toISOString()
+                };
+
+                await database.ref('videos/' + videoId).set(videoData);
+
+                showMessage('Video uploaded successfully! 🎉', 'success');
+
+                // Show generated link
+                const playerUrl = `${window.location.origin}/player.html?id=${videoId}`;
+                document.getElementById('playerLink').textContent = playerUrl;
+                document.getElementById('generatedLink').style.display = 'block';
+
+                // Reset form
+                document.getElementById('videoForm').reset();
+
+                // Refresh history
+                setTimeout(() => {
+                    loadVideos();
+                }, 500);
+
+            } catch (error) {
+                console.error('Error uploading video:', error);
+                showMessage('Error uploading video. Please try again.', 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            }
+        });
+
+        // Load and display videos
+        async function loadVideos() {
+            const container = document.getElementById('videosContainer');
+            container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📹</div><p>Loading videos...</p></div>';
+
+            try {
+                const snapshot = await database.ref('videos').get();
+
+                if (!snapshot.exists()) {
+                    container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🎬</div><h3>No videos yet</h3><p>Add your first video to get started</p></div>';
+                    return;
+                }
+
+                const videos = snapshot.val();
+                const videoArray = Object.values(videos).sort((a, b) => 
+                    new Date(b.uploadedAt) - new Date(a.uploadedAt)
+                );
+
+                container.innerHTML = '';
+                videoArray.forEach(video => {
+                    const videoCard = createVideoCard(video);
+                    if (videoCard) {
+                        container.appendChild(videoCard);
+                    }
+                });
+
+            } catch (error) {
+                console.error('Error loading videos:', error);
+                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">⚠️</div><h3>Error loading videos</h3><p>Please try again later</p></div>';
+            }
+        }
+
+        // Create video card element
+        function createVideoCard(video) {
+            const card = document.createElement('div');
+            card.className = 'video-card';
+
+            // Handle missing or invalid data
+            if (!video.id || !video.name) {
+                console.warn('Invalid video object:', video);
+                return null;
+            }
+
+            const date = video.uploadedAt ? new Date(video.uploadedAt).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            }) : 'Unknown date';
+
+            const playerUrl = `${window.location.origin}/player.html?id=${video.id}`;
+            const videoUrl = video.videoUrl || video.url || 'No URL';
+            const thumbnailUrl = video.thumbnailUrl || 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22300%22 height=%22180%22%3E%3Crect fill=%22%230f1428%22 width=%22300%22 height=%22180%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 font-size=%2214%22 fill=%22%23666%22%3ENo Thumbnail%3C/text%3E%3C/svg%3E';
+            const urlPreview = videoUrl.length > 50 ? videoUrl.substring(0, 50) + '...' : videoUrl;
+
+            card.innerHTML = `
+                <img src="${thumbnailUrl}" alt="${escapeHtml(video.name)}" class="video-card-thumbnail" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22300%22 height=%22180%22%3E%3Crect fill=%22%230f1428%22 width=%22300%22 height=%22180%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 font-size=%2216%22 fill=%22%23666%22%3EImage not found%3C/text%3E%3C/svg%3E'">
+                <div class="video-card-content">
+                    <div class="video-card-title">${escapeHtml(video.name)}</div>
+                    <div class="video-card-id">ID: ${escapeHtml(video.id)}</div>
+                    <div class="video-card-date">Uploaded: ${date}</div>
+                    <div class="video-card-url" title="${escapeHtml(videoUrl)}">${escapeHtml(urlPreview)}</div>
+                    <div class="video-card-actions">
+                        <button type="button" class="btn-copy" onclick="copyLink('${playerUrl}')">Copy Link</button>
+                        <button type="button" class="btn-delete" onclick="deleteVideo('${video.id}')">Delete</button>
+                    </div>
+                </div>
+            `;
+
+            return card;
+        }
+
+        // Copy link to clipboard
+        function copyLink(url) {
+            navigator.clipboard.writeText(url).then(() => {
+                showMessage('Link copied to clipboard! 📋', 'success');
+            }).catch(() => {
+                showMessage('Failed to copy link', 'error');
+            });
+        }
+
+        // Copy generated link
+        function copyToClipboard() {
+            const link = document.getElementById('playerLink').textContent;
+            navigator.clipboard.writeText(link).then(() => {
+                showMessage('Link copied to clipboard! 📋', 'success');
+            }).catch(() => {
+                showMessage('Failed to copy link', 'error');
+            });
+        }
+
+        // Delete video
+        async function deleteVideo(videoId) {
+            if (confirm('Are you sure you want to delete this video?')) {
+                try {
+                    await database.ref('videos/' + videoId).remove();
+                    showMessage('Video deleted successfully', 'success');
+                    loadVideos();
+                } catch (error) {
+                    console.error('Error deleting video:', error);
+                    showMessage('Error deleting video', 'error');
+                }
+            }
+        }
+
+        // Refresh history
+        function refreshHistory() {
+            loadVideos();
+        }
+
+        // Escape HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Load videos on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            waitForFirebase(() => {
+                initializeApp();
+            });
+        });
+    </script>
+</body>
+</html>

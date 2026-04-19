@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase Debug - Video Player</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f1428 0%, #1a2456 100%);
+            color: #fff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(26, 36, 86, 0.5);
+            border: 1px solid rgba(255, 0, 0, 0.2);
+            border-radius: 12px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+        }
+
+        h1 {
+            margin-bottom: 10px;
+            color: #ff0000;
+        }
+
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            border-left: 3px solid #ff0000;
+        }
+
+        h2 {
+            margin-bottom: 15px;
+            font-size: 18px;
+            color: #ff6666;
+        }
+
+        .json-viewer {
+            background: #000;
+            padding: 15px;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .button {
+            background: #ff0000;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            margin: 10px 10px 10px 0;
+            transition: all 0.3s;
+        }
+
+        .button:hover {
+            background: #cc0000;
+            transform: translateY(-2px);
+        }
+
+        .button:disabled {
+            background: #666;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .status {
+            padding: 15px;
+            border-radius: 6px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+
+        .status.success {
+            background: rgba(0, 255, 0, 0.1);
+            color: #0f0;
+            border: 1px solid #0f0;
+        }
+
+        .status.error {
+            background: rgba(255, 0, 0, 0.1);
+            color: #f00;
+            border: 1px solid #f00;
+        }
+
+        .status.info {
+            background: rgba(100, 150, 255, 0.1);
+            color: #66f;
+            border: 1px solid #66f;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 0, 0, 0.3);
+            border-radius: 6px;
+            color: #fff;
+            font-family: 'Courier New', monospace;
+        }
+
+        input[type="text"]::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #ff0000;
+            box-shadow: 0 0 10px rgba(255, 0, 0, 0.2);
+        }
+
+        .video-list {
+            display: grid;
+            gap: 15px;
+        }
+
+        .video-item {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 3px solid #666;
+        }
+
+        .video-item.valid {
+            border-left-color: #0f0;
+        }
+
+        .video-item.invalid {
+            border-left-color: #f00;
+        }
+
+        .video-item-title {
+            font-weight: bold;
+            margin-bottom: 8px;
+            font-size: 15px;
+        }
+
+        .video-item-info {
+            font-size: 12px;
+            color: #aaa;
+            margin: 4px 0;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Firebase Debug Tool</h1>
+        <p>View and validate your video data in Firebase Realtime Database</p>
+
+        <div class="section">
+            <h2>Connection Status</h2>
+            <div id="connectionStatus" class="status info">🔄 Connecting...</div>
+        </div>
+
+        <div class="section">
+            <h2>View All Videos</h2>
+            <button class="button" onclick="loadAllVideos()">Load All Videos</button>
+            <div id="videosOutput"></div>
+        </div>
+
+        <div class="section">
+            <h2>Search by Video ID</h2>
+            <input type="text" id="searchId" placeholder="Enter video ID (e.g., helloworld01)">
+            <button class="button" onclick="searchVideo()">Search</button>
+            <div id="searchOutput"></div>
+        </div>
+
+        <div class="section">
+            <h2>Test Video Upload</h2>
+            <input type="text" id="testName" placeholder="Video Name">
+            <input type="text" id="testUrl" placeholder="Video URL (MP4 or M3U8)">
+            <input type="text" id="testThumbnail" placeholder="Thumbnail URL">
+            <button class="button" onclick="testUpload()">Test Upload</button>
+            <div id="uploadOutput"></div>
+        </div>
+
+        <div class="section">
+            <h2>Database Structure</h2>
+            <button class="button" onclick="viewDatabaseStructure()">View Database Structure</button>
+            <div id="structureOutput"></div>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+
+    <script>
+        let database;
+
+        // Wait for Firebase to load
+        function waitForFirebase(callback, maxAttempts = 50) {
+            let attempts = 0;
+            const checkInterval = setInterval(() => {
+                if (typeof firebase !== 'undefined') {
+                    clearInterval(checkInterval);
+                    callback();
+                } else if (attempts++ > maxAttempts) {
+                    clearInterval(checkInterval);
+                    updateStatus('Firebase failed to load', 'error');
+                }
+            }, 100);
+        }
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyA8JHU7qGrKlLwJZKzK3Rj9zLMoTqsHN44",
+            authDomain: "admin-488f7.firebaseapp.com",
+            databaseURL: "https://admin-488f7-default-rtdb.firebaseio.com",
+            projectId: "admin-488f7",
+            storageBucket: "admin-488f7.appspot.com",
+            messagingSenderId: "640638260644",
+            appId: "1:640638260644:web:0e63d47918ff41b71f9d31"
+        };
+
+        function updateStatus(message, type = 'info') {
+            const status = document.getElementById('connectionStatus');
+            status.className = `status ${type}`;
+            status.textContent = message;
+        }
+
+        function initializeApp() {
+            if (!firebase.apps.length) {
+                firebase.initializeApp(firebaseConfig);
+            }
+            database = firebase.database();
+            updateStatus('✅ Connected to Firebase', 'success');
+        }
+
+        async function loadAllVideos() {
+            const output = document.getElementById('videosOutput');
+            output.innerHTML = '<div class="status info">⏳ Loading videos...</div>';
+
+            try {
+                const snapshot = await database.ref('videos').once('value');
+                const videos = snapshot.val();
+
+                if (!videos) {
+                    output.innerHTML = '<div class="status info">No videos found in database</div>';
+                    return;
+                }
+
+                let html = '<div class="video-list">';
+                let validCount = 0, invalidCount = 0;
+
+                Object.entries(videos).forEach(([key, video]) => {
+                    const isValid = video && video.id && video.name && video.videoUrl && video.thumbnailUrl;
+                    if (isValid) validCount++;
+                    else invalidCount++;
+
+                    html += `
+                        <div class="video-item ${isValid ? 'valid' : 'invalid'}">
+                            <div class="video-item-title">${isValid ? '✅' : '❌'} ${video.name || 'No Name'}</div>
+                            <div class="video-item-info"><strong>ID:</strong> ${video.id || 'missing'}</div>
+                            <div class="video-item-info"><strong>Video URL:</strong> ${video.videoUrl ? '✓ Present' : '✗ Missing'}</div>
+                            <div class="video-item-info"><strong>Thumbnail:</strong> ${video.thumbnailUrl ? '✓ Present' : '✗ Missing'}</div>
+                            <div class="video-item-info"><strong>Uploaded:</strong> ${video.uploadedAt || 'unknown'}</div>
+                            <details style="margin-top: 10px;">
+                                <summary style="cursor: pointer; color: #66f;">View Raw JSON</summary>
+                                <div class="json-viewer">${JSON.stringify(video, null, 2)}</div>
+                            </details>
+                        </div>
+                    `;
+                });
+
+                html += '</div>';
+                output.innerHTML = `<div class="status success">✅ Found ${validCount} valid & ${invalidCount} invalid videos</div>${html}`;
+            } catch (error) {
+                output.innerHTML = `<div class="status error">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        function searchVideo() {
+            const videoId = document.getElementById('searchId').value.trim();
+            if (!videoId) {
+                updateStatus('Please enter a video ID', 'error');
+                return;
+            }
+
+            const output = document.getElementById('searchOutput');
+            output.innerHTML = '<div class="status info">⏳ Searching...</div>';
+
+            database.ref('videos/' + videoId).once('value', (snapshot) => {
+                const video = snapshot.val();
+                if (!video) {
+                    output.innerHTML = `<div class="status error">Video "${videoId}" not found</div>`;
+                    return;
+                }
+
+                const isValid = video.videoUrl && video.thumbnailUrl;
+                output.innerHTML = `
+                    <div class="status ${isValid ? 'success' : 'error'}">
+                        ${isValid ? '✅ Valid video' : '❌ Missing required fields'}
+                    </div>
+                    <div class="json-viewer">${JSON.stringify(video, null, 2)}</div>
+                `;
+            }).catch(error => {
+                output.innerHTML = `<div class="status error">Error: ${error.message}</div>`;
+            });
+        }
+
+        function testUpload() {
+            const name = document.getElementById('testName').value.trim();
+            const url = document.getElementById('testUrl').value.trim();
+            const thumbnail = document.getElementById('testThumbnail').value.trim();
+
+            if (!name || !url || !thumbnail) {
+                updateStatus('Please fill all test fields', 'error');
+                return;
+            }
+
+            const output = document.getElementById('uploadOutput');
+            output.innerHTML = '<div class="status info">⏳ Uploading test video...</div>';
+
+            const id = generateId(name);
+            const videoData = {
+                id: id,
+                name: name,
+                videoUrl: url,
+                thumbnailUrl: thumbnail,
+                uploadedAt: new Date().toISOString()
+            };
+
+            database.ref('videos/' + id).set(videoData)
+                .then(() => {
+                    output.innerHTML = `
+                        <div class="status success">✅ Test video uploaded!</div>
+                        <div class="json-viewer">ID: ${id}\n\n${JSON.stringify(videoData, null, 2)}</div>
+                        <p style="margin-top: 10px;">Player URL: <code style="background: #000; padding: 5px; border-radius: 4px;">player.html?id=${id}</code></p>
+                    `;
+                })
+                .catch(error => {
+                    output.innerHTML = `<div class="status error">Error: ${error.message}</div>`;
+                });
+        }
+
+        function generateId(name) {
+            const vowels = 'aeiouAEIOU';
+            const consonants = name
+                .split('')
+                .filter(char => char.match(/[a-zA-Z]/) && !vowels.includes(char))
+                .join('')
+                .toLowerCase();
+            return (consonants || name.substring(0, 3).toLowerCase()) + '01';
+        }
+
+        async function viewDatabaseStructure() {
+            const output = document.getElementById('structureOutput');
+            output.innerHTML = '<div class="status info">⏳ Loading structure...</div>';
+
+            try {
+                const snapshot = await database.ref().once('value');
+                const data = snapshot.val();
+                output.innerHTML = `<div class="json-viewer">${JSON.stringify(data, null, 2)}</div>`;
+            } catch (error) {
+                output.innerHTML = `<div class="status error">Error: ${error.message}</div>`;
+            }
+        }
+
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', () => {
+            waitForFirebase(() => {
+                initializeApp();
+            });
+        });
+    </script>
+</body>
+</html>
